@@ -65,7 +65,7 @@ def check_page_for_text(driver, url):
         return False
 
 def main(credentials_path):
-     # Initialize the WebDriver with automatic ChromeDriver management and headless mode
+    # Initialize the WebDriver with automatic ChromeDriver management and headless mode
         chrome_options = webdriver.ChromeOptions()
         chrome_options.add_argument('--headless')
         chrome_options.add_argument('--no-sandbox')
