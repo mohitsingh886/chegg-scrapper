@@ -4,8 +4,9 @@ import time
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from selenium import webdriver
-from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
@@ -46,8 +47,8 @@ def login(driver):
     time.sleep(5)
 
 def check_page_for_text(driver, url):
-    driver.get(url)
     try:
+        driver.get(url)
         # Wait for the page to load
         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'sc-iBYQkv')))
         # Find all elements with the specified class
@@ -65,20 +66,24 @@ def check_page_for_text(driver, url):
         return False
 
 def main(credentials_path):
-    # Initialize the WebDriver with automatic ChromeDriver management and headless mode
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.add_argument('--headless')
-    chrome_options.add_argument('--no-sandbox')
-    chrome_options.add_argument('--disable-dev-shm-usage')
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
-
-    # Connect to Google Sheets
-    scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-    creds = ServiceAccountCredentials.from_json_keyfile_name(credentials_path, scope)
-    client = gspread.authorize(creds)
-    sheet = client.open('chegg sheet').sheet1  # Replace with your Google Sheet name
-
     try:
+        # Initialize the WebDriver with automatic ChromeDriver management
+        chrome_options = Options()
+        chrome_options.add_argument('--headless')
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--disable-extensions')
+        chrome_options.add_argument('--disable-setuid-sandbox')
+        chrome_options.add_argument('--disable-software-rasterizer')        
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+
+        # Connect to Google Sheets
+        scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+        creds = ServiceAccountCredentials.from_json_keyfile_name(credentials_path, scope)
+        client = gspread.authorize(creds)
+        sheet = client.open('chegg sheet').sheet1  # Replace with your Google Sheet name
+
         login(driver)
         
         # Get all URLs from the first column of the sheet
@@ -101,7 +106,8 @@ def main(credentials_path):
 
     finally:
         # Close the WebDriver session
-        driver.quit()
+        if 'driver' in locals():
+            driver.quit()
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
