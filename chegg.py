@@ -19,35 +19,38 @@ password = 'Straive@5830'
 search_texts = ['code', 'program', 'function', 'c++', 'java', 'python', 'operating', 'language', 'assembly']
 
 def login(driver):
-    driver.get(login_url)
-    # Wait for the page to load
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, 'username')))
-    
-    # Find username field and enter username
-    username_field = driver.find_element(By.NAME, 'username')
-    username_field.send_keys(username)
-    
-    # Click submit button after entering username
-    submit_button_username = driver.find_element(By.XPATH, '//button[@type="submit"]')
-    submit_button_username.click()
-    
-    # Wait for the password field to be visible
-    WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.NAME, 'password')))
-    
-    # Find password field and enter password
-    password_field = driver.find_element(By.NAME, 'password')
-    password_field.send_keys(password)
-    
-    # Click submit button after entering password
-    submit_button_password = driver.find_element(By.XPATH, '//button[@type="submit"]')
-    submit_button_password.click()
+    try:
+        driver.get(login_url)
+        # Wait for the page to load
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, 'username')))
+        
+        # Find username field and enter username
+        username_field = driver.find_element(By.NAME, 'username')
+        username_field.send_keys(username)
+        
+        # Click submit button after entering username
+        submit_button_username = driver.find_element(By.XPATH, '//button[@type="submit"]')
+        submit_button_username.click()
+        
+        # Wait for the password field to be visible
+        WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.NAME, 'password')))
+        
+        # Find password field and enter password
+        password_field = driver.find_element(By.NAME, 'password')
+        password_field.send_keys(password)
+        
+        # Click submit button after entering password
+        submit_button_password = driver.find_element(By.XPATH, '//button[@type="submit"]')
+        submit_button_password.click()
 
-    # Wait for the login process to complete
-    time.sleep(5)
+        # Wait for the login process to complete
+        time.sleep(5)
+    except Exception as e:
+        print(f"An error occurred during login: {e}")
 
 def check_page_for_text(driver, url):
-    driver.get(url)
     try:
+        driver.get(url)
         # Wait for the page to load
         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'sc-iBYQkv')))
         # Find all elements with the specified class
@@ -65,16 +68,20 @@ def check_page_for_text(driver, url):
         return False
 
 def main(credentials_path):
-    # Initialize the WebDriver with automatic ChromeDriver management
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
-
-    # Connect to Google Sheets
-    scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-    creds = ServiceAccountCredentials.from_json_keyfile_name(credentials_path, scope)
-    client = gspread.authorize(creds)
-    sheet = client.open('chegg sheet').sheet1  # Replace with your Google Sheet name
-
     try:
+        # Initialize the WebDriver with automatic ChromeDriver management and headless mode
+        chrome_options = webdriver.ChromeOptions()
+        chrome_options.add_argument('--headless')
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+
+        # Connect to Google Sheets
+        scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+        creds = ServiceAccountCredentials.from_json_keyfile_name(credentials_path, scope)
+        client = gspread.authorize(creds)
+        sheet = client.open('chegg sheet').sheet1  # Replace with your Google Sheet name
+
         login(driver)
         
         # Get all URLs from the first column of the sheet
@@ -91,13 +98,12 @@ def main(credentials_path):
                 sheet.update_cell(i, 3, url)  # Update the third column with the found URL
             
             time.sleep(3)  # Pause between checks for visibility
-
     except Exception as e:
         print(f"An error occurred: {e}")
-
     finally:
         # Close the WebDriver session
-        driver.quit()
+        if 'driver' in locals():
+            driver.quit()
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
